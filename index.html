@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Khmer - English Dictionary</title>
+
+    <!-- PWA Manifest & Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Khmer Dict">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for Google Sans & Plus Jakarta Sans Fallback -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Google Sans", 'sans-serif'],
+                        khmer: ['"Google Sans"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Google Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 9999px;
+        }
+        .drawer-up {
+            transform: translateY(0%);
+        }
+        .drawer-down {
+            transform: translateY(100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col justify-between overflow-hidden">
+
+    <!-- Top App Bar -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/80 pt-safe px-4 py-3 flex items-center justify-between shadow-xs z-10 flex-shrink-0">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                <i class="fa-solid font-khmer">វ</i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold leading-none text-slate-900 dark:text-white">Khmer Dict</h1>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-khmer mt-0.5">វចនានុក្រមអង់គ្លេស-ខ្មែរ</p>
+            </div>
+        </div>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center space-x-1.5">
+            <!-- Add New Word Button -->
+            <button onclick="openAddWordModal()" class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg active:scale-95 transition text-xs flex items-center gap-1 font-medium shadow-xs">
+                <i class="fa-solid fa-plus"></i> Add
+            </button>
+
+            <!-- Mode Switch -->
+            <button id="direction-btn" onclick="toggleSearchDirection()" class="px-2 py-1.5 rounded-lg bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-medium text-xs flex items-center gap-1 active:scale-95 transition">
+                <span id="direction-label">ALL <i class="fa-solid fa-arrows-rotate text-[10px]"></i></span>
+            </button>
+
+            <!-- Dark Mode Toggle -->
+            <button onclick="toggleDarkMode()" class="p-2 text-slate-500 dark:text-slate-400 rounded-lg active:bg-slate-100 dark:active:bg-slate-700">
+                <i id="theme-icon" class="fa-solid fa-moon text-base"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Mobile Content Area -->
+    <main class="flex-1 flex flex-col min-h-0 relative">
+        
+        <!-- Search Bar Section -->
+        <div class="p-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/60 flex-shrink-0 space-y-2">
+            <div class="relative flex items-center">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                </div>
+                <input 
+                    type="search" 
+                    id="search-input" 
+                    placeholder="Search Khmer, English or Definition..." 
+                    oninput="handleSearch()"
+                    class="w-full pl-9 pr-8 py-2.5 bg-slate-100 dark:bg-slate-900/80 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-khmer text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                    autocomplete="off"
+                >
+                <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-circle-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Categories Filter Bar -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 text-xs" id="category-bar">
+                <button onclick="selectCategory('All')" class="cat-chip active px-3 py-1 rounded-full font-medium whitespace-nowrap bg-blue-600 text-white transition">All</button>
+                <button onclick="selectCategory('General')" class="cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition">General</button>
+                <button onclick="selectCategory('Education')" class="cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition">Education</button>
+                <button onclick="selectCategory('Food')" class="cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition">Food & Drink</button>
+                <button onclick="selectCategory('Tech')" class="cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition">Technology</button>
+                <button onclick="selectCategory('Emotion')" class="cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition">Emotions</button>
+                <button onclick="selectCategory('Custom')" class="cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition">Custom Words</button>
+            </div>
+        </div>
+
+        <!-- Scrollable Word List Area -->
+        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1" id="list-container">
+            <!-- Dynamic items populated by JavaScript -->
+        </div>
+
+        <!-- Detail Drawer Modal -->
+        <div id="detail-drawer" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 opacity-0 pointer-events-none flex flex-col justify-end">
+            <div class="flex-1" onclick="closeDetailDrawer()"></div>
+            <div id="drawer-content" class="bg-white dark:bg-slate-800 rounded-t-3xl max-h-[85vh] flex flex-col p-5 shadow-2xl transition-transform duration-300 ease-out transform drawer-down">
+                <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-4 flex-shrink-0"></div>
+                <div class="border-b border-slate-100 dark:border-slate-700 pb-3 mb-3">
+                    <div class="flex items-start justify-between">
+                        <div class="space-y-1">
+                            <!-- Khmer Word First (Large Title: text-2xl font-bold) -->
+                            <div class="flex items-center space-x-2">
+                                <h2 id="modal-khmer" class="text-2xl font-bold font-khmer text-slate-900 dark:text-white leading-tight"></h2>
+                                <button onclick="speakKhmerWord()" class="p-1.5 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 active:scale-95 transition" title="Listen Khmer">
+                                    <i class="fa-solid fa-volume-high text-xs"></i>
+                                </button>
+                                <span id="modal-phonetic" class="text-xs text-slate-400 italic ml-1"></span>
+                            </div>
+                            <!-- English Word Underneath (Smaller Size: text-sm font-medium) -->
+                            <div class="flex items-center space-x-2 pt-0.5">
+                                <h3 id="modal-english" class="text-sm font-medium text-blue-600 dark:text-blue-400"></h3>
+                                <button onclick="speakEnglishWord()" class="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 active:scale-95 transition" title="Listen English">
+                                    <i class="fa-solid fa-volume-high text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button id="modal-fav-btn" onclick="toggleFavoriteCurrent()" class="p-3 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 active:text-amber-500 transition">
+                            <i id="modal-fav-icon" class="fa-regular fa-star text-base"></i>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-2.5 text-[10px]">
+                        <span id="modal-category" class="px-2 py-0.5 font-medium rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300"></span>
+                        <span id="modal-source" class="px-2 py-0.5 font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300"></span>
+                        <span id="modal-date" class="ml-auto px-2 py-0.5 font-medium rounded font-khmer bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"></span>
+                    </div>
+                </div>
+                <div class="overflow-y-auto space-y-4 pr-1 flex-1">
+                    <div>
+                        <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Definition / អត្ថន័យ</h4>
+                        <div id="modal-definition" class="text-sm font-khmer leading-relaxed text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 space-y-1"></div>
+                    </div>
+                    <div id="modal-examples-wrap">
+                        <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Examples / ឧទាហរណ៍</h4>
+                        <ul id="modal-examples" class="space-y-2 text-xs font-khmer"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Word Dialog Modal -->
+        <div id="add-word-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-3 flex flex-col max-h-[90vh]">
+                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base">Add New Dictionary Entry</h3>
+                    <button onclick="closeAddWordModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                
+                <form id="add-word-form" onsubmit="saveCustomWord(event)" class="space-y-3 overflow-y-auto pr-1 flex-1 text-xs">
+                    <div>
+                        <label class="block font-medium text-slate-600 dark:text-slate-300 mb-1">Khmer Word (ពាក្យខ្មែរ)*</label>
+                        <input type="text" id="add-km" required class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-khmer">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 dark:text-slate-300 mb-1">English Translation*</label>
+                        <input type="text" id="add-en" required class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 dark:text-slate-300 mb-1">Category</label>
+                        <select id="add-cat" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="General">General</option>
+                            <option value="Education">Education</option>
+                            <option value="Food">Food</option>
+                            <option value="Tech">Tech</option>
+                            <option value="Emotion">Emotion</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 dark:text-slate-300 mb-1">Phonetic Readout</label>
+                        <input type="text" id="add-phonetic" placeholder="e.g. [suos-dei]" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 dark:text-slate-300 mb-1">Definition (Supports Markdown: **bold**, *italic*, - list)</label>
+                        <textarea id="add-def" rows="3" placeholder="**ពន្យល់:** ពាក្យប្រើប្រាស់...\n- ន័យទី១\n- ន័យទី២" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-khmer"></textarea>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 dark:text-slate-300 mb-1">Example Sentence</label>
+                        <input type="text" id="add-ex" placeholder="Khmer sentence — English translation" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-khmer">
+                    </div>
+
+                    <div class="pt-2 flex justify-end space-x-2">
+                        <button type="button" onclick="closeAddWordModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium shadow-xs">Save Word</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Sticky Mobile Bottom Tab Navigation -->
+    <nav class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700/80 pb-safe pt-1 px-2 flex justify-around items-center z-20 flex-shrink-0">
+        <button id="nav-search" onclick="switchTab('search')" class="flex flex-col items-center py-1.5 px-4 text-blue-600 dark:text-blue-400 font-medium">
+            <i class="fa-solid fa-magnifying-glass text-lg mb-0.5"></i>
+            <span class="text-[10px]">Search</span>
+        </button>
+        <button id="nav-favorites" onclick="switchTab('favorites')" class="flex flex-col items-center py-1.5 px-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-bookmark text-lg mb-0.5"></i>
+            <span class="text-[10px]">Saved (<span id="count-fav">0</span>)</span>
+        </button>
+        <button id="nav-history" onclick="switchTab('history')" class="flex flex-col items-center py-1.5 px-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-clock-rotate-left text-lg mb-0.5"></i>
+            <span class="text-[10px]">History</span>
+        </button>
+    </nav>
+
+    <!-- Script Implementation -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+
+        // Helper: Convert digits & dates into full Khmer formatted text (e.g. ថ្ងៃទី១៥ ខែវិច្ឆិកា ឆ្នាំ២០២៣)
+        function formatKhmerDate(dateString) {
+            if (!dateString) return 'មិនមានទិន្នន័យ';
+            
+            const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+            const khmerMonths = [
+                'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
+                'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'
+            ];
+
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+
+            const day = date.getDate();
+            const month = date.getMonth();
+            const year = date.getFullYear();
+
+            const toKhmerNum = (num) => String(num).split('').map(d => khmerDigits[parseInt(d)] || d).join('');
+
+            return `ថ្ងៃទី${toKhmerNum(day)} ខែ${khmerMonths[month]} ឆ្នាំ${toKhmerNum(year)}`;
+        }
+
+        // Lightweight Markdown Parser
+        function renderMarkdown(text) {
+            if (!text) return '';
+            let html = text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code class="bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded text-xs">$1</code>')
+                .replace(/^\s*-\s+(.*)$/gim, '<li class="ml-4 list-disc">$1</li>')
+                .replace(/\n/g, '<br>');
+            return html;
+        }
+
+        // Default Built-in Dictionary Dataset with Dates
+        const defaultDictionaryData = [
+            { id: "1", km: "សួស្តី", en: "Hello", category: "General", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-15", phonetic: "[suos-dei]", def: "**ពន្យល់:** ពាក្យរ៉ាប់រងប្រើសម្រាប់ស្វាគមន៍គ្នាទៅវិញទៅមក។", examples: ["សួស្តី! សុខសប្បាយជាទេ? — Hello! How are you?"] },
+            { id: "2", km: "អរគុណ", en: "Thank you", category: "General", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-15", phonetic: "[or-kun]", def: "សម្តែងសេចក្តីដឹងគុណចំពោះអំពើល្អរបស់អ្នកដទៃ។", examples: ["អរគុណច្រើនសម្រាប់ការជួយ។ — Thank you very much for your help."] },
+            { id: "3", km: "សូមទោស", en: "Sorry / Excuse me", category: "General", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-16", phonetic: "[som-toas]", def: "ពាក្យស្នើសុំការអត់ទោស ឬប្រើនៅពេលរំខាននរណាម្នាក់។", examples: ["សូមទោស ខ្ញុំមិនបានចេតនាទេ។ — Sorry, I didn't mean to."] },
+            { id: "4", km: "សាលារៀន", en: "School", category: "Education", source: "បាលី-សំស្ក្រឹត (Pali/Sanskrit)", date: "2023-11-17", phonetic: "[sa-la-rien]", def: "កន្លែងសម្រាប់អប់រំ និងបណ្តុះបណ្តាលសិស្សានុសិស្ស។", examples: ["កុមារជិះកង់ទៅសាលារៀន។ — Children ride bicycles to school."] },
+            { id: "5", km: "សៀវភៅ", en: "Book", category: "Education", source: "ចិន (Sino-Khmer)", date: "2023-11-17", phonetic: "[siev-phev]", def: "ផ្ទាំងក្រដាសចងក្រងបញ្ចូលគ្នាសម្រាប់អាន ឬសរសេរ។", examples: ["ខ្ញុំចូលចិត្តអានសៀវភៅប្រវត្តិសាស្ត្រ។ — I like reading history books."] },
+            { id: "6", km: "គ្រូបង្រៀន", en: "Teacher", category: "Education", source: "សំស្ក្រឹត (Sanskrit)", date: "2023-11-18", phonetic: "[kru-bong-rien]", def: "បុគ្គលដែលបង្រៀនចំណេះដឹង និងចំណេះធ្វើដល់សិស្ស។", examples: ["គ្រូបង្រៀនកំពុងពន្យល់មេរៀន។ — The teacher is explaining the lesson."] },
+            { id: "7", km: "បាយ", en: "Rice / Food", category: "Food", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-19", phonetic: "[bay]", def: "អាហារសំខាន់ធ្វើពីអង្ករដាំឆ្អិន។", examples: ["តើអ្នកញ៉ាំបាយហើយឬនៅ? — Have you eaten yet?"] },
+            { id: "8", km: "ទឹក", en: "Water", category: "Food", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-19", phonetic: "[teuk]", def: "រាវគ្មានពណ៌ គ្មានក្លិន ដែលចាំបាច់សម្រាប់ជីវិត។", examples: ["សូមផឹកទឹកឱ្យបានច្រើនរាល់ថ្ងៃ។ — Please drink plenty of water daily."] },
+            { id: "9", km: "ស្រឡាញ់", en: "Love", category: "Emotion", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-20", phonetic: "[sro-lanh]", def: "មានចិត្តប្រតិពន្ធ ឬមេត្តាចំពោះនរណាម្នាក់ ឬអ្វីមួយ។", examples: ["ខ្ញុំស្រឡាញ់ប្រទេសកម្ពុជា។ — I love Cambodia."] },
+            { id: "10", km: "មិត្តភក្តិ", en: "Friend", category: "General", source: "បាលី-សំស្ក្រឹត (Pali/Sanskrit)", date: "2023-11-21", phonetic: "[mit-phek]", def: "មនុស្សដែលស្និទ្ធស្នាល និងរាប់អានគ្នាទៅវិញទៅមក។", examples: ["ពួកយើងជាមិត្តភក្តិល្អនឹងគ្នា។ — We are good friends."] },
+            { id: "11", km: "ផ្ទះ", en: "House / Home", category: "General", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-22", phonetic: "[phteah]", def: "ទីកន្លែងសម្រាប់រស់នៅរបស់មនុស្ស។", examples: ["ផ្ទះរបស់ខ្ញុំនៅជិតផ្សារ។ — My house is near the market."] },
+            { id: "12", km: "ធ្វើការ", en: "Work", category: "General", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-23", phonetic: "[thveu-kar]", def: "បំពេញភារកិច្ច ឬប្រកបមុខរបរផ្សេងៗ។", examples: ["គាត់ធ្វើការនៅក្រុមហ៊ុនបច្ចេកវិទ្យា។ — He works at a tech company."] },
+            { id: "13", km: "រីករាយ", en: "Happy / Joyful", category: "Emotion", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-24", phonetic: "[reeq-reay]", def: "មានចិត្តសប្បាយ រីករាយក្នុងអារម្មណ៍។", examples: ["ខ្ញុំមានអារម្មណ៍រីករាយណាស់ថ្ងៃនេះ។ — I feel very happy today."] },
+            { id: "14", km: "ពេលវេលា", en: "Time", category: "General", source: "បាលី-សំស្ក្រឹត (Pali/Sanskrit)", date: "2023-11-25", phonetic: "[pel-ve-lea]", def: "ខណៈ ពេល ឬកាលដែលកន្លងផុតទៅ ឬកំពុងកើតឡើង។", examples: ["ពេលវេលាមានតម្លៃណាស់។ — Time is very valuable."] },
+            { id: "15", km: "សុខភាព", en: "Health", category: "General", source: "បាលី (Pali)", date: "2023-11-26", phonetic: "[sok-kha-pheap]", def: "ស្ថានភាពល្អប្រសើរនៃរាងកាយ និងស្មារតី។", examples: ["ការហាត់ប្រាណល្អសម្រាប់សុខភាព។ — Exercise is good for health."] },
+            { id: "16", km: "ប្រទេស", en: "Country", category: "General", source: "សំស្ក្រឹត (Sanskrit)", date: "2023-11-27", phonetic: "[pro-thes]", def: "ដែនដីដែលមានរដ្ឋាភិបាល និងប្រជាជនរស់នៅច្បាស់លាស់។", examples: ["ប្រទេសកម្ពុជាមានវប្បធម៌ចំណាស់។ — Cambodia has an ancient culture."] },
+            { id: "17", km: "ប្រាក់", en: "Money", category: "General", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-28", phonetic: "[prak]", def: "រូបិយវត្ថុប្រើប្រាស់សម្រាប់ទិញដូរទំនិញ។", examples: ["គាត់សន្សំប្រាក់ដើម្បីទិញផ្ទះ។ — He saves money to buy a house."] },
+            { id: "18", km: "រៀន", en: "Learn / Study", category: "Education", source: "ខ្មែរដើម (Khmer Native)", date: "2023-11-29", phonetic: "[rien]", def: "ក្រសោបយកចំណេះដឹង ឬជំនាញថ្មីៗ។", examples: ["ខ្ញុំកំពុងរៀនភាសាអង់គ្លេស។ — I am learning English."] },
+            { id: "19", km: "ទូរស័ព្ទ", en: "Telephone / Phone", category: "Tech", source: "បារាំង/សំស្ក្រឹត (Greek/Sanskrit)", date: "2023-11-30", phonetic: "[tou-ro-sap]", def: "ឧបករណ៍អេឡិចត្រូនិចសម្រាប់ទំនាក់ទំនងសំឡេងពីចម្ងាយ។", examples: ["ទូរស័ព្ទរបស់ខ្ញុំអស់ថ្ម។ — My phone battery is dead."] },
+            { id: "20", km: "គ្រួសារ", en: "Family", category: "General", source: "បាលី (Pali)", date: "2023-12-01", phonetic: "[krua-sar]", def: "ក្រុមមនុស្សដែលត្រូវជាសាច់ញាតិនឹងគ្នា។", examples: ["គ្រួសារខ្ញុំរស់នៅជុំគ្នាដោយសប្បាយ។ — My family lives happily together."] }
+        ];
+
+        // Custom Words Storage Handler
+        function getCombinedDictionary() {
+            const customWords = JSON.parse(localStorage.getItem('m_dict_custom_words') || '[]');
+            return [...defaultDictionaryData, ...customWords];
+        }
+
+        // State Variables
+        let currentTab = 'search';
+        let activeSelectedId = null;
+        let selectedCategory = 'All';
+        let searchDirection = 'both';
+        let favorites = JSON.parse(localStorage.getItem('m_dict_favs') || '[]');
+        let historyList = JSON.parse(localStorage.getItem('m_dict_hist') || '[]');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCurrentView();
+            updateFavCount();
+            checkThemePreference();
+        });
+
+        // Add Word Modal Open/Close
+        function openAddWordModal() {
+            document.getElementById('add-word-modal').classList.remove('hidden');
+        }
+
+        function closeAddWordModal() {
+            document.getElementById('add-word-modal').classList.add('hidden');
+            document.getElementById('add-word-form').reset();
+        }
+
+        // Save Custom Word to LocalStorage
+        function saveCustomWord(event) {
+            event.preventDefault();
+            const km = document.getElementById('add-km').value.trim();
+            const en = document.getElementById('add-en').value.trim();
+            const category = document.getElementById('add-cat').value;
+            const phonetic = document.getElementById('add-phonetic').value.trim();
+            const def = document.getElementById('add-def').value.trim();
+            const ex = document.getElementById('add-ex').value.trim();
+
+            const newEntry = {
+                id: 'custom_' + Date.now(),
+                km: km,
+                en: en,
+                category: category,
+                source: "User Added",
+                date: new Date().toISOString().split('T')[0],
+                phonetic: phonetic ? `[${phonetic}]` : '',
+                def: def || 'User defined word entry.',
+                examples: ex ? [ex] : []
+            };
+
+            const customWords = JSON.parse(localStorage.getItem('m_dict_custom_words') || '[]');
+            customWords.unshift(newEntry);
+            localStorage.setItem('m_dict_custom_words', JSON.stringify(customWords));
+
+            closeAddWordModal();
+            renderCurrentView();
+        }
+
+        function selectCategory(cat) {
+            selectedCategory = cat;
+            document.querySelectorAll('.cat-chip').forEach(btn => {
+                if (btn.innerText.includes(cat)) {
+                    btn.className = "cat-chip active px-3 py-1 rounded-full font-medium whitespace-nowrap bg-blue-600 text-white transition";
+                } else {
+                    btn.className = "cat-chip px-3 py-1 rounded-full font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition";
+                }
+            });
+            renderCurrentView();
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            localStorage.setItem('m_dict_theme', isDark ? 'dark' : 'light');
+        }
+
+        function checkThemePreference() {
+            const saved = localStorage.getItem('m_dict_theme');
+            if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-sun';
+            }
+        }
+
+        function toggleSearchDirection() {
+            const label = document.getElementById('direction-label');
+            if (searchDirection === 'both') {
+                searchDirection = 'km-en';
+                label.innerHTML = 'KM <i class="fa-solid fa-arrow-right text-[10px]"></i> EN';
+            } else if (searchDirection === 'km-en') {
+                searchDirection = 'en-km';
+                label.innerHTML = 'EN <i class="fa-solid fa-arrow-right text-[10px]"></i> KM';
+            } else {
+                searchDirection = 'both';
+                label.innerHTML = 'ALL <i class="fa-solid fa-arrows-rotate text-[10px]"></i>';
+            }
+            handleSearch();
+        }
+
+        function handleSearch() {
+            if (currentTab !== 'search') switchTab('search');
+            else renderCurrentView();
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            handleSearch();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['search', 'favorites', 'history'].forEach(t => {
+                const btn = document.getElementById(`nav-${t}`);
+                if (t === tab) {
+                    btn.className = "flex flex-col items-center py-1.5 px-4 text-blue-600 dark:text-blue-400 font-medium";
+                } else {
+                    btn.className = "flex flex-col items-center py-1.5 px-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200";
+                }
+            });
+            renderCurrentView();
+        }
+
+        function renderCurrentView() {
+            const container = document.getElementById('list-container');
+            const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
+            const clearBtn = document.getElementById('clear-search-btn');
+
+            clearBtn.classList.toggle('hidden', searchVal.length === 0);
+
+            const allData = getCombinedDictionary();
+            let displayItems = [];
+
+            if (currentTab === 'search') {
+                displayItems = allData.filter(item => {
+                    const matchKm = item.km.toLowerCase().includes(searchVal);
+                    const matchEn = item.en.toLowerCase().includes(searchVal);
+                    const matchDef = item.def ? item.def.toLowerCase().includes(searchVal) : false;
+                    const matchCategory = selectedCategory === 'All' || item.category === selectedCategory;
+
+                    let matchDir = true;
+                    if (searchDirection === 'km-en') matchDir = matchKm;
+                    else if (searchDirection === 'en-km') matchDir = matchEn;
+                    else matchDir = matchKm || matchEn || matchDef;
+
+                    return matchCategory && matchDir;
+                });
+            } else if (currentTab === 'favorites') {
+                displayItems = allData.filter(item => favorites.includes(item.id));
+            } else if (currentTab === 'history') {
+                displayItems = historyList
+                    .map(id => allData.find(item => item.id === id))
+                    .filter(Boolean);
+            }
+
+            if (displayItems.length === 0) {
+                container.innerHTML = `
+                    <div class="h-64 flex flex-col items-center justify-center text-slate-400 text-center p-4">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
+                        <p class="text-xs">No records found</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = displayItems.map(item => `
+                <div onclick="openDetailDrawer('${item.id}')" class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/60 active:scale-[0.99] transition flex items-center justify-between shadow-xs">
+                    <div>
+                        <div class="font-khmer font-bold text-slate-900 dark:text-white text-base leading-snug">${item.km}</div>
+                        <div class="text-xs text-blue-600 dark:text-blue-400 font-medium">${item.en}</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[9px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">${item.category}</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-300 dark:text-slate-600"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openDetailDrawer(id) {
+            const allData = getCombinedDictionary();
+            const item = allData.find(d => d.id === id);
+            if (!item) return;
+
+            activeSelectedId = id;
+
+            historyList = [id, ...historyList.filter(hId => hId !== id)].slice(0, 20);
+            localStorage.setItem('m_dict_hist', JSON.stringify(historyList));
+
+            document.getElementById('modal-khmer').innerText = item.km;
+            document.getElementById('modal-english').innerText = item.en;
+            document.getElementById('modal-phonetic').innerText = item.phonetic || '';
+            document.getElementById('modal-category').innerText = `Cat: ${item.category}`;
+            document.getElementById('modal-source').innerText = `Origin: ${item.source}`;
+            
+            const dateSpan = document.getElementById('modal-date');
+            dateSpan.innerText = formatKhmerDate(item.date);
+
+            document.getElementById('modal-definition').innerHTML = renderMarkdown(item.def);
+
+            const exWrap = document.getElementById('modal-examples-wrap');
+            const exList = document.getElementById('modal-examples');
+            if (item.examples && item.examples.length > 0) {
+                exList.innerHTML = item.examples.map(ex => `
+                    <li class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-l-2 border-blue-500">${ex}</li>
+                `).join('');
+                exWrap.classList.remove('hidden');
+            } else {
+                exWrap.classList.add('hidden');
+            }
+
+            updateModalFavIcon();
+
+            const drawer = document.getElementById('detail-drawer');
+            const content = document.getElementById('drawer-content');
+            drawer.classList.remove('pointer-events-none', 'opacity-0');
+            drawer.classList.add('opacity-100');
+            content.classList.remove('drawer-down');
+            content.classList.add('drawer-up');
+        }
+
+        function closeDetailDrawer() {
+            const drawer = document.getElementById('detail-drawer');
+            const content = document.getElementById('drawer-content');
+            content.classList.remove('drawer-up');
+            content.classList.add('drawer-down');
+            drawer.classList.remove('opacity-100');
+            drawer.classList.add('opacity-0', 'pointer-events-none');
+            
+            if (currentTab !== 'search') renderCurrentView();
+        }
+
+        function toggleFavoriteCurrent() {
+            if (!activeSelectedId) return;
+
+            const idx = favorites.indexOf(activeSelectedId);
+            if (idx > -1) favorites.splice(idx, 1);
+            else favorites.push(activeSelectedId);
+
+            localStorage.setItem('m_dict_favs', JSON.stringify(favorites));
+            updateModalFavIcon();
+            updateFavCount();
+        }
+
+        function updateModalFavIcon() {
+            const isFav = favorites.includes(activeSelectedId);
+            const icon = document.getElementById('modal-fav-icon');
+            const btn = document.getElementById('modal-fav-btn');
+
+            if (isFav) {
+                icon.className = 'fa-solid fa-star text-amber-500 text-base';
+                btn.classList.add('bg-amber-50', 'dark:bg-amber-900/30');
+            } else {
+                icon.className = 'fa-regular fa-star text-slate-400 text-base';
+                btn.classList.remove('bg-amber-50', 'dark:bg-amber-900/30');
+            }
+        }
+
+        function updateFavCount() {
+            document.getElementById('count-fav').innerText = favorites.length;
+        }
+
+        function speakEnglishWord() {
+            if (!activeSelectedId) return;
+            const allData = getCombinedDictionary();
+            const item = allData.find(d => d.id === activeSelectedId);
+            if (!item) return;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(item.en);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakKhmerWord() {
+            if (!activeSelectedId) return;
+            const allData = getCombinedDictionary();
+            const item = allData.find(d => d.id === activeSelectedId);
+            if (!item) return;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(item.km);
+                utterance.lang = 'km-KH';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+    </script>
+</body>
+</html>
